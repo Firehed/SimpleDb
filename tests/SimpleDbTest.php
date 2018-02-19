@@ -186,4 +186,41 @@ class SimpleDbTest extends \PHPUnit\Framework\TestCase
         $this->expectException(NoResultError::class);
         $this->simpleDb->selectOne('SELECT * FROM settings WHERE id = :id', [':id' => 4]);
     }
+
+    /** @covers ::insert */
+    public function testInsert()
+    {
+        $id = $this->simpleDb->insert('settings', [
+            'key' => 'four',
+            'value' => 'four',
+        ]);
+        $this->assertSame('4', $id, 'Insert did not return last insert id');
+
+        $newRow = $this->simpleDb->selectOne('SELECT * FROM settings WHERE id = :id', [':id' => 4]);
+        $this->assertSame($newRow, [
+            'id' => '4',
+            'key' => 'four',
+            'value' => 'four',
+        ]);
+    }
+
+    /** @covers ::insert */
+    public function testInsertWithInvalidColumn()
+    {
+        $this->expectException(PrepareError::class);
+        $id = $this->simpleDb->insert('settings', [
+            'key' => 'four',
+            'val' => 'four',
+        ]);
+    }
+
+    /** @covers ::insert */
+    public function testInsertWithInvalidValue()
+    {
+        $this->expectException(ExecuteError::class);
+        $id = $this->simpleDb->insert('settings', [
+            'key' => null,
+            'value' => 'four',
+        ]);
+    }
 }

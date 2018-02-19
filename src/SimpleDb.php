@@ -86,4 +86,32 @@ class SimpleDb
         }
         return $row;
     }
+
+    public function insert(string $table, array $valueMap)
+    {
+        $format = 'INSERT INTO %s (%s) VALUES (%s)';
+        $cols = $binds = [];
+        foreach ($valueMap as $column => $value) {
+            $cols[] = $column;
+            $binds[':'.$column] = $value;
+        }
+        $query = sprintf(
+            $format,
+            $table,
+            implode(', ', $cols),
+            implode(', ', array_keys($binds))
+        );
+        $stmt = $this->db->prepare($query);
+        if (!$stmt) {
+            list($sqlstate, $code, $message) = $this->db->errorInfo();
+            throw new PrepareError($message, $code, $sqlstate);
+        }
+        $result = $stmt->execute($binds);
+        if ($result) {
+            return $this->db->lastInsertId();
+        } else {
+            list($sqlstate, $code, $message) = $stmt->errorInfo();
+            throw new ExecuteError($message, $code, $sqlstate);
+        }
+    }
 }
